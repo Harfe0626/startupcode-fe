@@ -1,42 +1,57 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import LogModal from "../components/modals/LogModal";
 import styles from "./styles/Chat.module.scss";
 import characterImage from "../assets/char.png";
 
+interface Message {
+  role: 'user' | 'ai';
+  message: string;
+}
+
 const Chat: React.FC = () => {
-  const [messages, setMessages] = useState<string[]>([
-    `등산을 좋아하시는군요! 
-그럼 한라산은 꼭 가보셔야겠네요.
-
-한라산에는 다양한 등산 코스가 있는데, 
-정상인 백록담까지 올라가는 코스와 중간 터를 탐방하는 코스 등이 있어요.
-
-혹시 어떤 난이도의 등산을 선호하시나요?
-
-초보자를 위한 코스도 좋고, 조금 도전적인 코스도 괜찮으신가요?
-
-등산을 좋아하시는군요! 
-그럼 한라산은 꼭 가보셔야겠네요.
-
-한라산에는 다양한 등산 코스가 있는데, 
-정상인 백록담까지 올라가는 코스와 중간 터를 탐방하는 코스 등이 있어요.
-
-혹시 어떤 난이도의 등산을 선호하시나요?
-
-초보자를 위한 코스도 좋고, 조금 도전적인 코스도 괜찮으신가요?`,
-  ]);
-  const [inputValue, setInputValue] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const aiMessageRef = useRef<HTMLParagraphElement | null>(null);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
-  const navigate = useNavigate();
   const handleSubmit = () => {
-    navigate("/result");
+    if (inputValue.trim() !== "") {
+      const userMessage: Message = { role: 'user', message: inputValue };
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+
+      // Mock AI response
+      setTimeout(() => {
+        const aiMessage: Message = { role: 'ai', message: `${inputValue}` };
+        setMessages((prevMessages) => [...prevMessages, aiMessage]);
+      }, 1000);
+
+      setInputValue("");
+    }
   };
+
+  useEffect(() => {
+    const aiMessages = messages.filter(msg => msg.role === 'ai');
+    if (aiMessageRef.current && aiMessages.length > 0) {
+      aiMessageRef.current.textContent = aiMessages[aiMessages.length - 1].message;
+    }
+  }, [messages]);
+
   const handleRestart = () => {
     navigate(0);
+  };
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -45,12 +60,13 @@ const Chat: React.FC = () => {
         <div className="pc-background"></div>
         <div className={styles["chat-background"]}>
           <div className={styles["chat-container"]}>
-            {messages.map((message, index) => (
-              <div key={index} className={styles["chat-message"]}>
-                <img src={characterImage} alt="Character" />
-                <p>{message}</p>
-              </div>
-            ))}
+            <button className={styles["log-button"]} onClick={openModal}>
+              =
+            </button>
+            <div className={`${styles["chat-message"]} ${styles["ai"]}`}>
+              <img src={characterImage} alt="Character" />
+              <p ref={aiMessageRef}></p>
+            </div>
             <input
               type="text"
               className={styles["chat-input"]}
@@ -66,13 +82,15 @@ const Chat: React.FC = () => {
                 다시 하기
               </button>
               <button className={styles["chat-button"]} onClick={handleSubmit}>
-                다음
+                전송
               </button>
             </div>
           </div>
         </div>
       </div>
+      <LogModal isOpen={isModalOpen} onRequestClose={closeModal} messages={messages} />
     </div>
   );
 };
+
 export default Chat;

@@ -14,8 +14,8 @@ const Form: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [name, setName] = useState('');
-  const [people, setPeople] = useState<number | ''>('');
-  const [age, setAge] = useState<number | ''>('');
+  const [people, setPeople] = useState<number | ''>(0);
+  const [age, setAge] = useState<number | ''>(0);
   const navigate = useNavigate();
 
   const handleRequestClose = (
