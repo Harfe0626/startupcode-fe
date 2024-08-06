@@ -41,7 +41,6 @@
     margin-top: 20px;
     overflow-y: auto;
     flex-grow: 1;
-    padding-right: 10px;
   }
   
   .message {
@@ -59,9 +58,11 @@
   }
   .user {
     background: #d1e7dd;
+    margin-left: 40px;
   }
   
   .ai {
     background: #f8d7da;
+    margin-right: 40px;
   }
   

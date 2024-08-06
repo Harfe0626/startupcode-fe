@@ -5,44 +5,41 @@ import styles from "./styles/Chat.module.scss";
 import characterImage from "../assets/char.png";
 import useStore from "../store/store";
 
-interface Message {
-  role: 'user' | 'ai';
-  message: string;
-}
-
 const Chat: React.FC = () => {
-  const [inputValue, setInputValue] = useState("");
+  const [count, setCount] = useState<number>(0);
+  const { thread_id, chat_list, setThreadId, addToChatList, clearChatList } = useStore();
+  const [message, setMessage] = useState<string>("");
+  const [inputValue, setInputValue] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
-  const aiMessageRef = useRef<HTMLParagraphElement | null>(null);
 
-    // zustand 스토어에서 상태와 함수 가져오기
-    const { thread_id, chat_list, setThreadId, addToChatList, clearChatList } = useStore();
-  
-    useEffect(() => {
-      if (!thread_id) {
-        // 새로운 thread_id를 생성하거나 가져오는 로직을 추가
-        const newThreadId = generateThreadId();
-        setThreadId(newThreadId);
-      }
-    }, [thread_id, setThreadId]);
+  useEffect(() => {
+    if (!thread_id) {
+      const newThreadId = generateThreadId();
+      setThreadId(newThreadId);
+    }
+  }, [thread_id, setThreadId]);
 
-    const generateThreadId = () => {
-      // thread_id 생성 로직 (예: UUID, timestamp 등)
-      return 'thread-' + Math.random().toString(36).substr(2, 9);
-    };
+  const generateThreadId = () => {
+    return 'thread-' + Math.random().toString(36).substr(2, 9);
+  };
+
+  useEffect(() => {
+    setMessage(chat_list[count]);
+  }, [Math.floor(count / 2), chat_list, count]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
   const handleSubmit = async () => {
-    if (inputValue.trim() === "") return;
-
     const data = {
       thread_id: thread_id,
-      message: inputValue,
+      chat_message: inputValue,
     };
+
+    addToChatList(data.chat_message);
+    setCount(count + 1);
 
     try {
       const response = await fetch("https://your-api-endpoint.com/api", {
@@ -52,33 +49,19 @@ const Chat: React.FC = () => {
         },
         body: JSON.stringify(data),
       });
-
       if (!response.ok) {
         throw new Error("Network response was not ok " + response.statusText);
       }
-
       const responseData = await response.json();
-      console.log("Success:", responseData);
-
-      setThreadId(responseData.thread_id);
-      addToChatList(JSON.stringify({ role: 'user', message: inputValue }));
-      addToChatList(JSON.stringify({ role: 'ai', message: responseData.message }));
-
-      // 요청이 성공한 경우에만 navigate 호출
-      // navigate("/result");
+      addToChatList(responseData.chat_message);
+      setCount(count + 1);
+      if (responseData.isend) {
+        navigate("/result");
+      }
     } catch (error) {
       console.error("Error:", error);
-      // 요청이 실패한 경우 navigate를 호출하지 않음
     }
-    setInputValue("");
   };
-
-  useEffect(() => {
-    const aiMessages = chat_list.map(msg => JSON.parse(msg) as Message).filter(msg => msg.role === 'ai');
-    if (aiMessageRef.current && aiMessages.length > 0) {
-      aiMessageRef.current.textContent = aiMessages[aiMessages.length - 1].message;
-    }
-  }, [chat_list]);
 
   const handleRestart = () => {
     clearChatList();
@@ -102,9 +85,9 @@ const Chat: React.FC = () => {
             <button className={styles["log-button"]} onClick={openModal}>
               =
             </button>
-            <div className={`${styles["chat-message"]} ${styles["ai"]}`}>
+            <div className={styles["chat-message"]}>
               <img src={characterImage} alt="Character" />
-              <p ref={aiMessageRef}></p>
+              <p>{message}</p>
             </div>
             <input
               type="text"
@@ -127,7 +110,14 @@ const Chat: React.FC = () => {
           </div>
         </div>
       </div>
-      <LogModal isOpen={isModalOpen} onRequestClose={closeModal} messages={chat_list.map(msg => JSON.parse(msg) as Message)} />
+      <LogModal 
+        isOpen={isModalOpen} 
+        onRequestClose={closeModal} 
+        messages={chat_list.map((msg, index) => ({ 
+          role: index % 2 === 0 ? 'user' : 'ai', 
+          message: msg 
+        }))} 
+      />
     </div>
   );
 };
