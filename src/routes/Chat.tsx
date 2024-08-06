@@ -7,22 +7,13 @@ import useStore from "../store/store";
 
 const Chat: React.FC = () => {
   const [count, setCount] = useState<number>(0);
-  const { thread_id, chat_list, setThreadId, addToChatList, clearChatList } = useStore();
+  const { thread_id, chat_list, clearChatList } = useStore();
+  const addToChatList = useStore((state) => state.addToChatList);
   const [message, setMessage] = useState<string>("");
+
   const [inputValue, setInputValue] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!thread_id) {
-      const newThreadId = generateThreadId();
-      setThreadId(newThreadId);
-    }
-  }, [thread_id, setThreadId]);
-
-  const generateThreadId = () => {
-    return 'thread-' + Math.random().toString(36).substr(2, 9);
-  };
 
   useEffect(() => {
     setMessage(chat_list[count]);
@@ -42,7 +33,7 @@ const Chat: React.FC = () => {
     setCount(count + 1);
 
     try {
-      const response = await fetch("https://your-api-endpoint.com/api", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,7 +46,7 @@ const Chat: React.FC = () => {
       const responseData = await response.json();
       addToChatList(responseData.chat_message);
       setCount(count + 1);
-      if (responseData.isend) {
+      if (responseData.body.isend === "true") {
         navigate("/result");
       }
     } catch (error) {
