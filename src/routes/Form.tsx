@@ -1,21 +1,25 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
+import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import TagModal from "../components/modals/InterestModal";
 import Button from "../components/Button";
 import styles from "./styles/Form.module.scss";
+import useStore from "../store/store";
 
 const Form: React.FC = () => {
+  const setThreadId = useStore((state) => state.setThreadId);
+  const addToChatList = useStore((state) => state.addToChatList);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [name, setName] = useState('');
-  const [people, setPeople] = useState<number | ''>(0);
-  const [age, setAge] = useState<number | ''>(0);
+  const [people, setPeople] = useState<number | ''>('');
+  const [age, setAge] = useState<number | ''>('');
   const navigate = useNavigate();
 
   const handleRequestClose = (
@@ -36,8 +40,14 @@ const Form: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!name || !people || !age || selectedTags.length === 0 || !selectedDate) {
-      toast.error('모든 정보를 입력해 주세요.');
+    if (
+      !name ||
+      !people ||
+      !age ||
+      selectedTags.length === 0 ||
+      !selectedDate
+    ) {
+      toast.error("모든 정보를 입력해 주세요.");
       return;
     }
 
@@ -46,13 +56,15 @@ const Form: React.FC = () => {
       people: Number(people),
       age: Number(age),
       interests: selectedTags,
-      date: selectedDate.toISOString().split('T')[0]
+      date: selectedDate.toISOString().split("T")[0],
     };
 
     try {
-      const response = await axios.post('/api/user', requestData);
+      const response = await axios.post("/api/user", requestData);
       if (response.data.code === 200) {
         toast.success(response.data.message);
+        setThreadId(response.data.thread_id);
+        addToChatList(response.data.message);
         navigate("/chat");
       }
     } catch (error) {
@@ -72,11 +84,11 @@ const Form: React.FC = () => {
           <div className={styles["form-container"]}>
             <div className={styles["button-container"]}>
               <Button />
-              <ToastContainer 
-                position="top-center" 
-                autoClose={5000} 
-                hideProgressBar={false} 
-                newestOnTop={false} 
+              <ToastContainer
+                position="top-center"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
                 closeOnClick
                 rtl={false}
                 pauseOnFocusLoss
@@ -96,14 +108,18 @@ const Form: React.FC = () => {
               placeholder="인원"
               className={styles["form-field"]}
               value={people}
-              onChange={(e) => setPeople(e.target.value ? Number(e.target.value) : '')}
+              onChange={(e) =>
+                setPeople(e.target.value ? Number(e.target.value) : "")
+              }
             />
             <input
               type="text"
               placeholder="나이"
               className={styles["form-field"]}
               value={age}
-              onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
+              onChange={(e) =>
+                setAge(e.target.value ? Number(e.target.value) : "")
+              }
             />
             <div
               className={`${styles["form-field"]} ${styles["tag-input"]}`}
